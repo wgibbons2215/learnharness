@@ -435,7 +435,10 @@ function broadcastUpdateStatus(status) {
 }
 
 function checkForUpdates({ manual = false } = {}) {
-	if (!autoUpdater) return;
+	if (!autoUpdater) {
+		if (manual && app.isPackaged) dialog.showMessageBox({ type: "info", message: "Updates are turned off in this build.", detail: "This is a custom build. To update, rebuild it from your fork." });
+		return;
+	}
 	autoUpdater
 		.checkForUpdates()
 		.then((result) => {
@@ -462,6 +465,10 @@ function installUpdateNow() {
 }
 
 function setupAutoUpdater() {
+	// Custom build: never self-update. The feed is the original author's
+	// releases, which would replace this build's changes on quit.
+	log("auto-update: disabled in this custom build");
+	return;
 	if (!app.isPackaged) {
 		log("auto-update: dev build — updater disabled");
 		return;
