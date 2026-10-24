@@ -216,10 +216,10 @@ describe("desktop release workflow", () => {
 		}
 	});
 
-	it("pairs Icon Composer packaging with macOS 26 and Xcode selection, retaining macOS 15 CI", () => {
-		const mac = packaging.strategy?.matrix.include.find(entry => entry.platform === "mac-arm64");
-		assert.equal(mac?.os, "macos-26", "actool's .icon compiler needs macOS 26 host frameworks, not just newer Xcode");
-		assert.equal(mac?.builder_args, "--mac --arm64");
+	it("custom build packages Windows only; the macOS Xcode step stays gated and ordered, retaining macOS 15 CI", () => {
+		assert.deepEqual(packaging.strategy?.matrix.include, [
+			{ os: "windows-2025", platform: "windows-x64", builder_args: "--win --x64" },
+		]);
 		assert.equal(packaging["runs-on"], "${{ matrix.os }}");
 		const xcodeIndex = packaging.steps.findIndex(step => step.uses === "maxim-lobanov/setup-xcode@v1");
 		assert.ok(xcodeIndex >= 0);
