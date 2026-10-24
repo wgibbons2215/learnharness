@@ -79,7 +79,9 @@ const DialogContext = createContext<{ open: (section?: string, row?: string) => 
  *  setup flow deep-links to Keys when no provider key exists yet). */
 /** The auto-update row's hint (tooltip wave): honest user language — no
  *  stream vocabulary. Exported for the copy pin (tooltip-mechanism test). */
-export const AUTO_UPDATE_HINT = "Automatic updates arrive in an upcoming release";
+/** Custom build: the updater is disabled in electron/main.cjs, so the row
+ *  shows OFF and locked (the stored setting was never read by anything). */
+export const AUTO_UPDATE_HINT = "Turned off in this custom build";
 
 export function SettingsDialogProvider({
 	children,
@@ -370,11 +372,10 @@ export function SettingsDialogBody({
 										testid="row-auto-update"
 									>
 										<Toggle
-											checked={record.general?.autoUpdate ?? true}
+											checked={false}
+											disabled
 											label="auto update"
-											onChange={(on) =>
-												void write("general", { autoUpdate: on })
-											}
+											onChange={() => {}}
 										/>
 									</SettingsRow>
 								</SettingsSection>

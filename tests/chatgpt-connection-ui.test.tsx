@@ -66,6 +66,20 @@ test("Providers is the first/default page; General is last and other pages keep 
  assert.doesNotMatch(html, />Model providers<\/button>/);
 });
 
+test("General → Auto-update shows off and locked in this custom build, even if the stored setting says on", async () => {
+ globalThis.fetch = (async (url: string) => {
+  assert.equal(url, "/api/settings");
+  return Response.json({ settings: { version: 1, general: { autoUpdate: true } } });
+ }) as typeof fetch;
+ await mount(<SettingsDialogBody onClose={() => {}} initialSection="general" />);
+ await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+ const sw = document.querySelector<HTMLButtonElement>('[data-testid="toggle-auto-update"]')!;
+ assert(sw, "auto-update switch rendered");
+ assert.equal(sw.getAttribute("aria-checked"), "false");
+ assert.equal(sw.disabled, true);
+ assert.match(byTest("row-auto-update").textContent ?? "", /Turned off in this custom build/);
+});
+
 test("Providers has exactly four ordered sections; unknown variables stay masked/read-only at the end of Model API keys", async () => {
  globalThis.fetch = async (url) => {
   assert.equal(url, "/api/keys");
