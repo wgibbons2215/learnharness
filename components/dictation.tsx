@@ -94,7 +94,10 @@ const DG_URL =
 	"&channels=1" +
 	"&smart_format=true" +
 	"&punctuate=true" +
-	"&endpointing=300";
+	"&endpointing=300" +
+	// Opt out of Deepgram's Model Improvement Program: audio and
+	// transcripts are not kept to train their models.
+	"&mip_opt_out=true";
 
 /** Meter tuning — the owner's tested values, see the file header. */
 const METER_FLOOR_DB = -50;
