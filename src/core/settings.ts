@@ -32,6 +32,7 @@ import { AUTH_PROVIDER_KEYS } from "./auth-keys.ts";
 import type { ModelRole } from "../../config.ts";
 import type { ChatSettings } from "./contracts/chat.ts";
 import type { SearchEngineId } from "./search.ts";
+import { sanitizeSkillsSettings, type SkillsSettings } from "./skills.ts";
 
 /** The schema version this code understands. Bump ONLY for breaking shape
  *  changes (a field renamed/meaning changed); pure additions never bump. */
@@ -367,6 +368,8 @@ export interface UserSettings {
 	appearance?: AppearanceSettings;
 	graph?: GraphSettings;
 	compaction?: CompactionSettings;
+	/** Skills: the folder they live in and when each applies. */
+	skills?: SkillsSettings;
 	[key: string]: unknown;
 }
 
@@ -630,6 +633,9 @@ export function sanitizeUserSettings(raw: unknown): UserSettings | null {
 		if (r.compaction !== undefined && r.compaction !== null && typeof r.compaction === "object") {
 			out.compaction = sanitizeCompaction(r.compaction as Record<string, unknown>);
 		}
+	}
+	if (r.skills !== null && typeof r.skills === "object" && !Array.isArray(r.skills)) {
+		out.skills = sanitizeSkillsSettings(r.skills as Record<string, unknown>);
 	}
 	// Unknown top-level keys ride along untouched (forward-compat). One
 	// known-DEAD key is stripped instead of riding: `chat` (the old

@@ -620,6 +620,30 @@ async function main() {
 		return chatGPTControl(command, chatgpt);
 	});
 
+	// Skills settings: a native folder picker, and opening the skills folder
+	// in the OS file manager (created first if it does not exist yet).
+	const trustedSkillsRequest = (event) => trustedAppWindows.has(BrowserWindow.fromWebContents(event.sender)) && trustedSender(event, new URL(url).origin, BrowserWindow);
+	ipcMain.handle("lh:skills:pick-folder", async (event, current) => {
+		if (!trustedSkillsRequest(event)) return null;
+		const win = BrowserWindow.fromWebContents(event.sender);
+		const result = await dialog.showOpenDialog(win, {
+			title: "Choose your skills folder",
+			properties: ["openDirectory", "createDirectory"],
+			...(typeof current === "string" && path.isAbsolute(current) ? { defaultPath: current } : {}),
+		});
+		return result.canceled ? null : (result.filePaths[0] ?? null);
+	});
+	ipcMain.handle("lh:skills:open-folder", async (event, folder) => {
+		if (!trustedSkillsRequest(event)) return "Untrusted desktop request.";
+		if (typeof folder !== "string" || !path.isAbsolute(folder)) return "Not an absolute folder path.";
+		try {
+			fs.mkdirSync(folder, { recursive: true });
+		} catch (err) {
+			return `Could not create the folder: ${err?.message ?? err}`;
+		}
+		return (await shell.openPath(folder)) || null;
+	});
+
 	installMenu();
 
 	// Auto-update (Wave C): wire the updater before the window so the

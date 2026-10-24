@@ -6,6 +6,8 @@ import type { Usage } from "@earendil-works/pi-ai";
 import { PATHS } from "../../config.ts";
 import { APP_IDENTITY, piEngineFor, type PiEngine } from "./models.ts";
 import { effectivePromptSegments } from "./prompt-segments.ts";
+import { createLoadSkillTool, type SkillInfo } from "./skills.ts";
+import { skillOnFor, skillsPromptSection, type EffectiveSkillsSettings, type SkillStage } from "../core/skills.ts";
 import {
 	askUserQuestionTool,
 	createProberTools,
@@ -119,6 +121,10 @@ export interface AgentBuildOptions {
 	 *  fresh per turn, honoring enabled overrides (switch on + file
 	 *  exists); absent → the cached pure-source composition. */
 	promptSwitches?: Record<string, boolean>;
+	/** The learner's installed skills and their stage switches. Each agent
+	 *  sees only the skills on for its stage: their names and descriptions
+	 *  are appended to the system prompt and load_skill joins the tools. */
+	skills?: { found: readonly SkillInfo[]; stages: EffectiveSkillsSettings["stages"] };
 	/** Native conversation identity: the existing persisted chat id, reused
 	 * across reconstructed prober, teacher, and practice Agents.
 	 * Debug: when set AND LH_PROVIDER_EVENTS=1, raw provider stream events
@@ -167,16 +173,22 @@ function makeQuestionStopper() {
 	};
 }
 
-function baseAgentOptions(kind: AgentKind, opts: AgentBuildOptions, tools: AgentTool<any, any>[]) {
+const SKILL_STAGE_FOR: Record<AgentKind, SkillStage> = { prober: "probe", teacher: "teach", practice: "practice" };
+
+function baseAgentOptions(kind: AgentKind, opts: AgentBuildOptions, baseTools: AgentTool<any, any>[]) {
 	// Practice never reaches the role fallback (the handler ALWAYS injects
 	// the session's conversation engine — practice rides the same
 	// conversation-spec resolution as teaching); the cast keeps AgentKind
 	// ("practice" is not a ModelRole) honest about that.
 	const engine = opts.engine ?? piEngineFor(kind as "prober" | "teacher");
 	const stopper = makeQuestionStopper();
-	const systemPrompt = opts.promptSwitches
+	const composed = opts.promptSwitches
 		? composeInstructions(kind, opts.promptSwitches)
 		: composedInstructions[kind]!;
+	const stage = SKILL_STAGE_FOR[kind];
+	const activeSkills = (opts.skills?.found ?? []).filter((s) => skillOnFor(opts.skills!.stages, s.name, stage));
+	const systemPrompt = activeSkills.length ? `${composed}\n\n---\n\n${skillsPromptSection(activeSkills)}` : composed;
+	const tools = activeSkills.length ? [...baseTools, createLoadSkillTool(activeSkills)] : baseTools;
 	// Debug recorder (owner, 2026-10-04): raw provider events when
 	// LH_PROVIDER_EVENTS=1 and the caller handed a chatId; undefined is
 	// the normal no-observer path (tests, env-off).

@@ -37,6 +37,7 @@ import {
 	type AppearanceSettings,
 	type CompactionSettings,
 	type GraphSettings,
+	type SkillsSettings,
 	type UserSettings,
 } from "@/src/core";
 import { useAppearance } from "./appearance.tsx";
@@ -49,6 +50,7 @@ import { KeysSection } from "./keys-section.tsx";
 import { Hint } from "@/components/ui/hint";
 import { AppearanceSection, GraphSection } from "./appearance-section.tsx";
 import { KeyboardSection } from "./keyboard-section.tsx";
+import { SkillsSection } from "./skills-section.tsx";
 import { ChatGPTUIProvider } from "./chatgpt-connection.tsx";
 
 /** Owner (2026-09-20): hints earn their place — mechanics-explaining
@@ -59,6 +61,7 @@ const SECTIONS = [
 	{ id: "agent", label: "Agent" },
 	{ id: "appearance", label: "Appearance" },
 	{ id: "graph", label: "Graph" },
+	{ id: "skills", label: "Skills" },
 	{ id: "keyboard", label: "Keyboard", hint: "Stored on this device" },
 	{ id: "general", label: "General" },
 ] as const;
@@ -227,7 +230,7 @@ export function SettingsDialogBody({
 	 *  schema mistake caught by the validation surface). */
 	const write = useCallback(
 		async (
-			section: "general" | "agent" | "models" | "appearance" | "graph" | "compaction",
+			section: "general" | "agent" | "models" | "appearance" | "graph" | "compaction" | "skills",
 			body: object,
 		) => {
 			setError(null);
@@ -425,6 +428,19 @@ export function SettingsDialogBody({
 										graph={record.graph}
 										onSectionChange={(next: GraphSettings) =>
 											void write("graph", next)
+										}
+									/>
+								</SettingsSection>
+							)}
+							{active === "skills" && (
+								<SettingsSection
+									title="Skills"
+									testid="section-skills"
+								>
+									<SkillsSection
+										skills={record.skills}
+										onSectionChange={(next: SkillsSettings) =>
+											void write("skills", next)
 										}
 									/>
 								</SettingsSection>

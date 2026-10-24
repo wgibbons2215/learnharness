@@ -68,6 +68,11 @@ declare global {
 			/** Auto-update channel (Wave C, 2026-10-10): "lh:update-status" pushes once a staged update exists. */
 			onUpdateStatus?: (cb: (status: { status: string; version: string | null }) => void) => () => void;
 			installUpdate?: () => void;
+			/** Skills settings: native folder picker + open in file manager. */
+			skills?: {
+				pickFolder: (current?: string) => Promise<string | null>;
+				openFolder: (folder: string) => Promise<string | null>;
+			};
 		};
 	}
 }

@@ -23,6 +23,11 @@
  *   asks main to kill the server and quit-and-install. Browser builds:
  *   both absent, the banner never renders.
  *
+ *   window.lh.skills.pickFolder(current) / openFolder(folder) — the Skills
+ *   settings page: a native folder picker (resolves to a path or null) and
+ *   opening the skills folder in the file manager (resolves to null, or an
+ *   error message). Browser builds: absent, the page hides both buttons.
+ *
  * Channel names are mirrored in electron/main.cjs — keep them in sync.
  */
 const { contextBridge, ipcRenderer } = require("electron");
@@ -56,4 +61,8 @@ contextBridge.exposeInMainWorld("lh", {
 		return () => ipcRenderer.removeListener("lh:update-status", listener);
 	},
 	installUpdate: () => ipcRenderer.send("lh:update-install"),
+	skills: {
+		pickFolder: (current) => ipcRenderer.invoke("lh:skills:pick-folder", current),
+		openFolder: (folder) => ipcRenderer.invoke("lh:skills:open-folder", folder),
+	},
 });

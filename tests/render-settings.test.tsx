@@ -16,6 +16,7 @@ import { TOGGLE_TOOLS, AgentSection } from "../components/settings/agent-section
 import { AppearanceSection, GraphSection } from "../components/settings/appearance-section.tsx";
 import { KeysSection } from "../components/settings/keys-section.tsx";
 import { KeyboardSection } from "../components/settings/keyboard-section.tsx";
+import { SkillsSection } from "../components/settings/skills-section.tsx";
 import type { GraphSettings } from "../src/core/index.ts";
 import { SettingsDialogBody, SettingsDialogProvider } from "../components/settings/settings-dialog.tsx";
 import { KEYBOARD_ACTIONS } from "../src/core/index.ts";
@@ -41,12 +42,12 @@ describe("SettingsDialog (the designed surface, SSR)", () => {
 		assert.ok(!html.includes("settings-dialog"));
 	});
 
-	it("the dialog frame: role=dialog + the ✕ + the six-section nav, Providers first and General last", () => {
+	it("the dialog frame: role=dialog + the ✕ + the seven-section nav, Providers first and General last", () => {
 		const html = renderToStaticMarkup(<SettingsDialogBody onClose={() => {}} />);
 		assert.ok(html.includes('role="dialog"'));
 		assert.ok(html.includes('aria-modal="true"'));
 		assert.ok(html.includes('aria-label="Close settings"'));
-		for (const id of ["general", "keys", "agent", "appearance", "graph", "keyboard"]) {
+		for (const id of ["general", "keys", "agent", "appearance", "graph", "skills", "keyboard"]) {
 			assert.ok(html.includes(`data-testid="settings-nav-${id}"`), id);
 		}
 		// Providers is the first landing section; internal keys deep links survive.
@@ -280,5 +281,37 @@ describe("KeyboardSection (thin SSR)", () => {
 		assert.ok(!html.includes("Model menu"), "model-menu rows removed");
 		assert.ok(!KEYBOARD_ACTIONS.some((a) => a.id as string === "model-menu-walk"));
 		assert.ok(!KEYBOARD_ACTIONS.some((a) => a.id as string === "model-menu-pick"));
+	});
+});
+describe("SkillsSection", () => {
+	const scan = {
+		folder: "~/LearnHarness Skills",
+		resolved: "/home/u/LearnHarness Skills",
+		exists: true,
+		skills: [{ name: "chess", description: "Teaching chess openings.", dir: "/home/u/LearnHarness Skills/chess" }],
+		problems: [{ dir: "/home/u/LearnHarness Skills/broken", error: "header is missing `description`" }],
+	};
+
+	it("lists skills with a switch per stage, honoring stored switches", () => {
+		const html = renderToStaticMarkup(
+			<SkillsSection skills={{ stages: { chess: { practice: false } } }} onSectionChange={() => {}} initialScan={scan} />,
+		);
+		assert.ok(html.includes('placeholder="~/LearnHarness Skills"'), "default folder shows as the placeholder");
+		assert.ok(html.includes("1 skill in /home/u/LearnHarness Skills"));
+		assert.ok(html.includes("Teaching chess openings."));
+		const on = (label: string) => /aria-checked="true"/.test(html.split(`aria-label="${label}"`)[0]!.split("<button").pop()!);
+		assert.equal(on("chess Measuring"), true);
+		assert.equal(on("chess Planning &amp; teaching"), true);
+		assert.equal(on("chess Practice"), false);
+		assert.ok(html.includes("Not used: header is missing `description`"));
+	});
+
+	it("browser builds have no Browse/Open buttons; a missing folder says so", () => {
+		const html = renderToStaticMarkup(
+			<SkillsSection skills={undefined} onSectionChange={() => {}} initialScan={{ ...scan, exists: false, skills: [], problems: [] }} />,
+		);
+		assert.ok(!html.includes("skills-browse"));
+		assert.ok(!html.includes("skills-open"));
+		assert.ok(html.includes("doesn&#x27;t exist yet. Create it to add skills."));
 	});
 });

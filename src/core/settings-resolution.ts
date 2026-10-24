@@ -26,6 +26,7 @@ import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { ModelRole } from "../../config.ts";
 import type { ChatSettings } from "./contracts/chat.ts";
 import type { SearchEngineId } from "./search.ts";
+import { DEFAULT_SKILLS_FOLDER, type EffectiveSkillsSettings } from "./skills.ts";
 import {
 	BACKGROUND_MODEL_ROLES,
 	FACTORY_SETTINGS,
@@ -93,6 +94,9 @@ export interface EffectiveSettings {
 	/** Compaction (owner round 14): resolved concrete — absent record
 	 *  section resolves to the factory 150k. */
 	compaction: Required<CompactionSettings>;
+	/** Skills: the folder (default ~/LearnHarness Skills) and the
+	 *  per-skill stage switches as stored (absent switch = on). */
+	skills: EffectiveSkillsSettings;
 }
 
 /** The conversation pair's chain (BYOK, owner 2026-09-22): the chat's own
@@ -215,6 +219,10 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 		},
 		compaction: {
 			thresholdTokens: record?.compaction?.thresholdTokens ?? FACTORY_SETTINGS.compaction.thresholdTokens,
+		},
+		skills: {
+			folder: record?.skills?.folder ?? DEFAULT_SKILLS_FOLDER,
+			stages: record?.skills?.stages ?? {},
 		},
 	};
 }
